@@ -6,7 +6,7 @@ window.onload = function onload() {
 
   console.log('not so fast, FIXME: linting violation no semicolon');
 
-  promiseData.then(function(data) {
+  promiseData.then(data => {
     console.log('GOT DATA!', data);
     window.hdData = data;
   });
