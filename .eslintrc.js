@@ -10,6 +10,8 @@ module.exports = {
     // These are sketches.  Console debugging is okay.
     "no-console": 0,
 
+    "max-len": ["error", 140],
+
     // disagreements with airbnb:
     "func-names": 0,
     "prefer-arrow-callback": 0,
@@ -20,5 +22,6 @@ module.exports = {
     "newline-per-chained-call": 0, // not appropriate for D3
     "key-spacing": 0, // I like making columns
     "space-before-function-paren": 0, // don't like that style
+    "no-param-reassign": ["error", {"props": false} ] // let forEach's mutate objects
   }
 };

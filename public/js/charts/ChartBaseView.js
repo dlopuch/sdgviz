@@ -3,26 +3,6 @@ const d3 = require('d3');
 
 const CrossfilterDataStore = require('../stores/CrossfilterDataStore');
 
-const SDG_DEFS = {
-  1:  { color: '#E6223D', name: 'No Poverty' },
-  2:  { color: '#DEA73A', name: 'Zero Hunger' },
-  3:  { color: '#4CA247', name: 'Good Health and Well-Being' },
-  4:  { color: '#C72030', name: 'Quality Education' },
-  5:  { color: '#EF402E', name: 'Gender Equality' },
-  6:  { color: '#26BFE7', name: 'Clean Water and Sanitation' },
-  7:  { color: '#FBC413', name: 'Affordable and Clean Energy' },
-  8:  { color: '#A41C45', name: 'Decent Work and Economic Growth' },
-  9:  { color: '#F26A2F', name: 'Industry, Innovation, and Infrastructure' },
-  10: { color: '#DF1768', name: 'Reduced Inequalities' },
-  11: { color: '#F89D2A', name: 'Sustainable Cities and Communities' },
-  12: { color: '#C08E2D', name: 'Responsible Consumption and Production' },
-  13: { color: '#3F7F45', name: 'Climate Action' },
-  14: { color: '#1F97D5', name: 'Life Below Water' },
-  15: { color: '#5ABA48', name: 'Life on Land' },
-  16: { color: '#136A9F', name: 'Peace, Justice, and Strong Institutions' },
-  17: { color: '#13496B', name: 'Partnership for the Goals' },
-};
-
 /**
  * Creates a D3-like scale constructor that when set with a domain of ordinals (intended:
  * organization names), the scale returns a color using the d3.interpolateCool() scale.
@@ -207,6 +187,7 @@ module.exports = class ChartBaseView {
     let sdgsByAmount = xfData.drilldownKV; // list of {key: <sdgId>, value: <number>}
 
     let keys = sdgsByAmount.map(r => r.key);
+    let drilldownByKey = _.keyBy(sdgsByAmount, r => r.key);
 
     let stacker = d3.stack()
       .keys(keys)
@@ -225,7 +206,7 @@ module.exports = class ChartBaseView {
 
     // Now we have a list of series: [ [<sdg-A data 1>, ...], [<sdg-B data 1>, ... ], ...]
     // Need to flatten it because only doing one datum for each serie.
-    let data = series.map(s => ({ sdgId: s.key, stackD: s[0] }))
+    let data = series.map(s => ({ sdgId: s.key, stackD: s[0], xfData: drilldownByKey[s.key] }))
 
       // d3 stack generator makes the top element the last element in the list.  That screws up
       // the transitions a bit because the data bind joins on index order, so if we data join
@@ -263,14 +244,14 @@ module.exports = class ChartBaseView {
         .attr('y', yScale(0))
         .attr('width', glyphWidth)
         .attr('height', 0)
-        .style('fill', d => (SDG_DEFS[d.sdgId] ? SDG_DEFS[d.sdgId].color : '#000'))
+        .style('fill', d => (d.xfData.meta ? d.xfData.meta.color : '#000'))
       .merge(allGlyphs)
       .transition()
         .attr('x', 0)
         .attr('y', d => yScale(d.stackD[0]))
         .attr('width', glyphWidth)
         .attr('height', d => yScale(d.stackD[1] - d.stackD[0]))
-        .style('fill', d => (SDG_DEFS[d.sdgId] ? SDG_DEFS[d.sdgId].color : '#000'));
+        .style('fill', d => (d.xfData.meta ? d.xfData.meta.color : '#000'));
   }
 
   renderByOrgs(xfData) {
@@ -338,7 +319,6 @@ module.exports = class ChartBaseView {
         .attr('height', 0)
         .style('fill', d => orgScale(d.orgId))
       .merge(allGlyphs)
-        .attr('data-org', d => d.orgId)
       .transition()
         .attr('x', 0)
         .attr('y', d => yScale(d.stackD[0]))
