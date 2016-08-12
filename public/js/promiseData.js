@@ -17,7 +17,7 @@ function promiseFetchData() {
     const timeout = setTimeout(() => {
       timeoutHit = true;
       reject(new Error('Timeout exceeded'));
-    }, 5000);
+    }, 10000);
     tabletop.init({
       key: DOCS_KEY,
       simpleSheet: true,

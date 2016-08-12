@@ -1,3 +1,4 @@
+const reactApp = require('./react/reactApp.jsx');
 window.d3 = require('d3');
 
 // Load d3 plugins:
@@ -6,8 +7,10 @@ window.d3 = require('d3');
 // require('d3-selection-multi');
 
 const promiseData = require('./promiseData');
-
 const ChartBaseView = require('./charts/ChartBaseView');
+const actions = require('./actions');
+
+window.actions = actions;
 
 window.onload = function onload() {
   promiseData.then(data => {
@@ -18,4 +21,6 @@ window.onload = function onload() {
   let chartBaseView = new ChartBaseView('#sdgv-svg');
   chartBaseView.renderScales();
   window.chartBaseView = chartBaseView;
+
+  reactApp();
 };

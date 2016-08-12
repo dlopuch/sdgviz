@@ -184,7 +184,7 @@ module.exports = class ChartBaseView {
       });
   }
 
-  renderBySDG() {
+  renderBySdg() {
     promiseData
       .error(e => console.error(`Cannot render all, data load error: ${e}`))
       .then(dataXF => {
