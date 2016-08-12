@@ -16,5 +16,9 @@ module.exports = {
     "no-shadow": 0,
     "consistent-return": 0,
     "prefer-const": 0,
+    "no-underscore-dangle": 0,
+    "newline-per-chained-call": 0, // not appropriate for D3
+    "key-spacing": 0, // I like making columns
+    "space-before-function-paren": 0, // don't like that style
   }
 };

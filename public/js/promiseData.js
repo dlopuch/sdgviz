@@ -49,7 +49,7 @@ module.exports = promiseFetchData()
   return data.map(d => ({
     organization: d.organization,
     sdg: parseInt(d.sdg, 10),
-    amount: parseInt(d.amount, 10),
+    amount: parseInt((d.amount || '').replace(/,/g, ''), 10), // strip out commas before parseInt()
     country: d.country,
   }));
 })
