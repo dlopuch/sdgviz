@@ -53,7 +53,7 @@ module.exports = Reflux.createStore({
     this._processXf(
       'amountByOrg',
       // extractKV(xf):
-      dataXF => dataXF.g.orgsByAmount.all().sort()
+      dataXF => Array.from(dataXF.g.orgsByAmount.all()).sort()
     );
   },
 
@@ -62,7 +62,7 @@ module.exports = Reflux.createStore({
       'amountBySdg',
       // extractKV(xf):
       dataXF => {
-        let kvs = dataXF.g.sdgsByAmount.all().sort(r => d3.ascending(r.key));
+        let kvs = Array.from(dataXF.g.sdgsByAmount.all()).sort(r => d3.ascending(r.key));
 
         // Now lets add in the SDG meta data
         kvs.forEach(kv => {

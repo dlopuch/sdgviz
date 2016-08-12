@@ -2,6 +2,7 @@ const React = require('react');
 const Reflux = require('reflux');
 
 const CrossfilterDataStore = require('../stores/CrossfilterDataStore');
+const F = require('../Formatters');
 
 module.exports = React.createClass({
   mixins: [
@@ -19,8 +20,8 @@ module.exports = React.createClass({
 
     if (xfData.drilldownName === 'allAmount') {
       return (<div>
-        Total pledged: {xfData.allAmount}.<br/>
-        That's {xfData.allAmount / xfData.goal}% achieved!
+        Total pledged: {F.pledge(xfData.allAmount)}.<br/>
+        That's {F.percent(xfData.allAmount / xfData.goal)} achieved!
       </div>);
 
     } else if (xfData.drilldownName === 'amountByOrg') {
@@ -36,14 +37,14 @@ module.exports = React.createClass({
           { xfData.drilldownKV.map(kv => (
             <tr key={kv.key}>
               <td>{kv.key}</td>
-              <td>{kv.value}</td>
+              <td>{F.pledge(kv.value)}</td>
             </tr>
           )) }
           </tbody>
           <tfoot>
             <tr>
               <td>Total:</td>
-              <td>{this.state.xfData.allAmount}</td>
+              <td>{F.pledge(this.state.xfData.allAmount)}</td>
             </tr>
           </tfoot>
         </table>
@@ -59,7 +60,7 @@ module.exports = React.createClass({
           </tr>
           </thead>
           <tbody>
-          { xfData.drilldownKV.map(kv => (
+          { xfData.drilldownKV.reverse().map(kv => (  // .reverse() to match order in chart
             <tr key={kv.key}>
               <td>
                 <div style={{
@@ -78,14 +79,14 @@ module.exports = React.createClass({
                 </div>
                 {kv.meta.name}
               </td>
-              <td>{kv.value}</td>
+              <td>{F.pledge(kv.value)}</td>
             </tr>
           )) }
           </tbody>
           <tfoot>
             <tr>
               <td>Total:</td>
-              <td>{this.state.xfData.allAmount}</td>
+              <td>{F.pledge(this.state.xfData.allAmount)}</td>
             </tr>
           </tfoot>
         </table>

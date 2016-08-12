@@ -87,7 +87,8 @@ module.exports = class ChartBaseView {
 
     this._components.yAxis = d3.axisLeft(this._components.axisYScale)
       .tickSize(3)
-      .tickPadding(6);
+      .tickPadding(6)
+      .ticks(5, '3s');
 
     this._svg = {
       xAxis: svg.append('g')
@@ -136,7 +137,7 @@ module.exports = class ChartBaseView {
   }
 
   renderScales() {
-    this._svg.xAxis.call(this._components.xAxis);
+    // this._svg.xAxis.call(this._components.xAxis);
     this._svg.yAxis.transition()
       .call(this._components.yAxis);
   }
@@ -147,7 +148,7 @@ module.exports = class ChartBaseView {
       .data([allAmount]);
 
     this.updateYScale({
-      domain: [0, allAmount],
+      domain: [0, xfData.goal],
       call: s => s.nice(),
     });
     this.renderScales();
