@@ -1,7 +1,7 @@
 const _ = require('lodash');
 const d3 = require('d3');
 
-const promiseData = require('../promiseData');
+const CrossfilterDataStore = require('../stores/CrossfilterDataStore');
 
 const SDG_DEFS = {
   1:  { color: '#E6223D', name: 'No Poverty' },
@@ -56,6 +56,13 @@ window.scaleOrgColor = scaleOrgColor;
 
 module.exports = class ChartBaseView {
   constructor(svgSelector = 'svg', _opts = {}) {
+    // flux bindings:
+    // ----------------
+    CrossfilterDataStore.listen(this.onNewCrossfilterData.bind(this));
+
+
+    // d3 setup:
+    // ----------------
     let svg = this.svg = d3.select(svgSelector);
 
     if (!svg.size()) {
@@ -115,6 +122,20 @@ module.exports = class ChartBaseView {
     };
   }
 
+  onNewCrossfilterData(xfData) {
+    if (!xfData.drilldownName) {
+      throw new Error('Missing drilldown category!');
+    }
+
+    if (xfData.drilldownName === 'allAmount') {
+      this.renderAllAmount(xfData);
+    } else if (xfData.drilldownName === 'amountByOrg') {
+      this.renderByOrgs(xfData);
+    } else if (xfData.drilldownName === 'amountBySdg') {
+      this.renderBySdg(xfData);
+    }
+  }
+
   /**
    * Updates y-axis scales
    * @param {Array(number)} config.domain Sets the domain of scales
@@ -140,202 +161,189 @@ module.exports = class ChartBaseView {
       .call(this._components.yAxis);
   }
 
-  renderAllAmount() {
-    promiseData
-      .error(e => console.error(`Cannot render all, data load error: ${e}`))
-      .then(dataXF => {
-        let allGlyphs = this._svg.chartArea.selectAll('rect.glyph')
-          .data([dataXF.g.allAmount.value()]);
+  renderAllAmount(xfData) {
+    let allAmount = xfData.allAmount;
+    let allGlyphs = this._svg.chartArea.selectAll('rect.glyph')
+      .data([allAmount]);
 
-        this.updateYScale({
-          domain: [0, dataXF.g.allAmount.value()],
-          call: s => s.nice(),
-        });
-        this.renderScales();
+    this.updateYScale({
+      domain: [0, allAmount],
+      call: s => s.nice(),
+    });
+    this.renderScales();
 
-        let yScale = this._components.canvasYScale;
+    let yScale = this._components.canvasYScale;
 
-        let glyphWidth = 20;
+    let glyphWidth = 20;
 
-        allGlyphs.exit()
-          .transition()
-            .attr('x', 0)
-            .attr('y', yScale(0))
-            .attr('width', glyphWidth)
-            .attr('height', 0)
-            .remove();
+    allGlyphs.exit()
+      .transition()
+        .attr('x', 0)
+        .attr('y', yScale(0))
+        .attr('width', glyphWidth)
+        .attr('height', 0)
+        .remove();
 
-        allGlyphs
-          .enter()
-            .append('rect')
-            .classed('glyph', true)
-            .attr('x', 0)
-            .attr('y', yScale(0))
-            .attr('width', glyphWidth)
-            .attr('height', 0)
-            .style('fill', '#000')
-          .merge(allGlyphs)
-          .transition()
-            .attr('x', 0)
-            .attr('y', yScale(0))
-            .attr('width', glyphWidth)
-            .attr('height', yScale)
-            .style('fill', '#000');
-      });
+    allGlyphs
+      .enter()
+        .append('rect')
+        .classed('glyph', true)
+        .attr('x', 0)
+        .attr('y', yScale(0))
+        .attr('width', glyphWidth)
+        .attr('height', 0)
+        .style('fill', '#000')
+      .merge(allGlyphs)
+      .transition()
+        .attr('x', 0)
+        .attr('y', yScale(0))
+        .attr('width', glyphWidth)
+        .attr('height', yScale)
+        .style('fill', '#000');
   }
 
-  renderBySdg() {
-    promiseData
-      .error(e => console.error(`Cannot render all, data load error: ${e}`))
-      .then(dataXF => {
-        let allAmount = dataXF.g.allAmount.value();
-        let sdgsByAmount = dataXF.g.sdgsByAmount.all(); // list of {key: <sdgId>, value: <number>}
+  renderBySdg(xfData) {
+    let allAmount = xfData.allAmount;
+    let sdgsByAmount = xfData.drilldownKV; // list of {key: <sdgId>, value: <number>}
 
-        sdgsByAmount = sdgsByAmount.sort(r => d3.ascending(r.key));
-        let keys = sdgsByAmount.map(r => r.key);
+    let keys = sdgsByAmount.map(r => r.key);
 
-        let stacker = d3.stack()
-          .keys(keys)
-          .order(d3.stackOrderNone)
-          .offset(d3.stackOffsetNone);
+    let stacker = d3.stack()
+      .keys(keys)
+      .order(d3.stackOrderNone)
+      .offset(d3.stackOffsetNone);
 
-        // Transform data into a list of x-entries as expected by d3 stack generator
-        // (although we're using only 1 x-val)
-        let dataInverse = [{}];
-        sdgsByAmount.forEach(r => {
-          dataInverse[0][r.key] = r.value;
-        });
+    // Transform data into a list of x-entries as expected by d3 stack generator
+    // (although we're using only 1 x-val)
+    let dataInverse = [{}];
+    sdgsByAmount.forEach(r => {
+      dataInverse[0][r.key] = r.value;
+    });
 
-        let series = stacker(dataInverse)
-          .sort((s1, s2) => d3.ascending(s1.index, s2.index));
+    let series = stacker(dataInverse)
+      .sort((s1, s2) => d3.ascending(s1.index, s2.index));
 
-        // Now we have a list of series: [ [<sdg-A data 1>, ...], [<sdg-B data 1>, ... ], ...]
-        // Need to flatten it because only doing one datum for each serie.
-        let data = series.map(s => ({ sdgId: s.key, stackD: s[0] }))
+    // Now we have a list of series: [ [<sdg-A data 1>, ...], [<sdg-B data 1>, ... ], ...]
+    // Need to flatten it because only doing one datum for each serie.
+    let data = series.map(s => ({ sdgId: s.key, stackD: s[0] }))
 
-          // d3 stack generator makes the top element the last element in the list.  That screws up
-          // the transitions a bit because the data bind joins on index order, so if we data join
-          // to/from a smaller list, the top element disapears while we want it to morph into the
-          // smaller one.  Since stack generator gives us absolute coordinates, we simply reverse
-          // the order of the data bind.
-          .reverse();
+      // d3 stack generator makes the top element the last element in the list.  That screws up
+      // the transitions a bit because the data bind joins on index order, so if we data join
+      // to/from a smaller list, the top element disapears while we want it to morph into the
+      // smaller one.  Since stack generator gives us absolute coordinates, we simply reverse
+      // the order of the data bind.
+      .reverse();
 
-        let allGlyphs = this._svg.chartArea.selectAll('rect.glyph')
-          .data(data);
+    let allGlyphs = this._svg.chartArea.selectAll('rect.glyph')
+      .data(data);
 
-        this.updateYScale({
-          domain: [0, allAmount],
-          call: s => s.nice(),
-        });
-        this.renderScales();
+    this.updateYScale({
+      domain: [0, allAmount],
+      call: s => s.nice(),
+    });
+    this.renderScales();
 
-        let yScale = this._components.canvasYScale;
+    let yScale = this._components.canvasYScale;
 
-        let glyphWidth = 20;
+    let glyphWidth = 20;
 
-        allGlyphs.exit()
-          .transition()
-            .attr('x', 0)
-            .attr('y', yScale(0))
-            .attr('width', glyphWidth)
-            .attr('height', 0)
-            .remove();
+    allGlyphs.exit()
+      .transition()
+        .attr('x', 0)
+        .attr('y', yScale(0))
+        .attr('width', glyphWidth)
+        .attr('height', 0)
+        .remove();
 
-        allGlyphs
-          .enter()
-          .append('rect')
-            .classed('glyph', true)
-            .attr('x', 0)
-            .attr('y', yScale(0))
-            .attr('width', glyphWidth)
-            .attr('height', 0)
-            .style('fill', d => (SDG_DEFS[d.sdgId] ? SDG_DEFS[d.sdgId].color : '#000'))
-          .merge(allGlyphs)
-          .transition()
-            .attr('x', 0)
-            .attr('y', d => yScale(d.stackD[0]))
-            .attr('width', glyphWidth)
-            .attr('height', d => yScale(d.stackD[1] - d.stackD[0]))
-            .style('fill', d => (SDG_DEFS[d.sdgId] ? SDG_DEFS[d.sdgId].color : '#000'));
-      });
+    allGlyphs
+      .enter()
+      .append('rect')
+        .classed('glyph', true)
+        .attr('x', 0)
+        .attr('y', yScale(0))
+        .attr('width', glyphWidth)
+        .attr('height', 0)
+        .style('fill', d => (SDG_DEFS[d.sdgId] ? SDG_DEFS[d.sdgId].color : '#000'))
+      .merge(allGlyphs)
+      .transition()
+        .attr('x', 0)
+        .attr('y', d => yScale(d.stackD[0]))
+        .attr('width', glyphWidth)
+        .attr('height', d => yScale(d.stackD[1] - d.stackD[0]))
+        .style('fill', d => (SDG_DEFS[d.sdgId] ? SDG_DEFS[d.sdgId].color : '#000'));
   }
 
-  renderByOrgs() {
-    promiseData
-      .error(e => console.error(`Cannot render all, data load error: ${e}`))
-      .then(dataXF => {
-        let allAmount = dataXF.g.allAmount.value();
-        let sdgsByOrg = dataXF.g.orgsByAmount.all(); // list of {key: <sdgId>, value: <number>}
+  renderByOrgs(xfData) {
+    let allAmount = xfData.allAmount;
+    let sdgsByOrg = xfData.drilldownKV; // list of {key: <sdgId>, value: <number>}
 
-        sdgsByOrg = sdgsByOrg.sort();
-        let keys = sdgsByOrg.map(r => r.key);
+    let keys = sdgsByOrg.map(r => r.key);
 
-        let stacker = d3.stack()
-          .keys(keys)
-          .order(d3.stackOrderDescending)
-          .offset(d3.stackOffsetNone);
+    let stacker = d3.stack()
+      .keys(keys)
+      .order(d3.stackOrderDescending)
+      .offset(d3.stackOffsetNone);
 
-        // Transform data into a list of x-entries as expected by d3 stack generator
-        // (although we're using only 1 x-val)
-        let dataInverse = [{}];
-        sdgsByOrg.forEach(r => {
-          dataInverse[0][r.key] = r.value;
-        });
+    // Transform data into a list of x-entries as expected by d3 stack generator
+    // (although we're using only 1 x-val)
+    let dataInverse = [{}];
+    sdgsByOrg.forEach(r => {
+      dataInverse[0][r.key] = r.value;
+    });
 
-        let series = stacker(dataInverse)
-          .sort((s1, s2) => d3.ascending(s1.index, s2.index));
+    let series = stacker(dataInverse)
+      .sort((s1, s2) => d3.ascending(s1.index, s2.index));
 
-        // Now we have a list of series: [ [<sdg-A data 1>, ...], [<sdg-B data 1>, ... ], ...]
-        // Need to flatten it because only doing one datum for each serie.
-        let data = series.map(s => ({ orgId: s.key, stackD: s[0] }));
+    // Now we have a list of series: [ [<sdg-A data 1>, ...], [<sdg-B data 1>, ... ], ...]
+    // Need to flatten it because only doing one datum for each serie.
+    let data = series.map(s => ({ orgId: s.key, stackD: s[0] }));
 
-        // d3 stack generator makes the top element the last element in the list.  That screws up
-        // the transitions a bit because the data bind joins on index order, so if we data join
-        // to/from a smaller list, the top element disapears while we want it to morph into the
-        // smaller one.  Since stack generator gives us absolute coordinates, we simply reverse
-        // the order of the data bind.
-        data.reverse();
+    // d3 stack generator makes the top element the last element in the list.  That screws up
+    // the transitions a bit because the data bind joins on index order, so if we data join
+    // to/from a smaller list, the top element disapears while we want it to morph into the
+    // smaller one.  Since stack generator gives us absolute coordinates, we simply reverse
+    // the order of the data bind.
+    data.reverse();
 
-        let allGlyphs = this._svg.chartArea.selectAll('rect.glyph')
-          .data(data);
+    let allGlyphs = this._svg.chartArea.selectAll('rect.glyph')
+      .data(data);
 
-        this.updateYScale({
-          domain: [0, allAmount],
-          call: s => s.nice(),
-        });
-        this.renderScales();
+    this.updateYScale({
+      domain: [0, allAmount],
+      call: s => s.nice(),
+    });
+    this.renderScales();
 
-        let yScale = this._components.canvasYScale;
+    let yScale = this._components.canvasYScale;
 
-        let glyphWidth = 20;
-        let orgScale = scaleOrgColor();
-        orgScale.domain(data.map(d => d.orgId).reverse());
+    let glyphWidth = 20;
+    let orgScale = scaleOrgColor();
+    orgScale.domain(data.map(d => d.orgId).reverse());
 
-        allGlyphs.exit()
-          .transition()
-            .attr('x', 0)
-            .attr('y', yScale(0))
-            .attr('width', glyphWidth)
-            .attr('height', 0)
-            .remove();
+    allGlyphs.exit()
+      .transition()
+        .attr('x', 0)
+        .attr('y', yScale(0))
+        .attr('width', glyphWidth)
+        .attr('height', 0)
+        .remove();
 
-        allGlyphs
-          .enter()
-          .append('rect')
-            .classed('glyph', true)
-            .attr('x', 0)
-            .attr('y', yScale(0))
-            .attr('width', glyphWidth)
-            .attr('height', 0)
-            .style('fill', d => orgScale(d.orgId))
-          .merge(allGlyphs)
-            .attr('data-org', d => d.orgId)
-          .transition()
-            .attr('x', 0)
-            .attr('y', d => yScale(d.stackD[0]))
-            .attr('width', glyphWidth)
-            .attr('height', d => yScale(d.stackD[1] - d.stackD[0]))
-            .style('fill', d => orgScale(d.orgId));
-      });
+    allGlyphs
+      .enter()
+      .append('rect')
+        .classed('glyph', true)
+        .attr('x', 0)
+        .attr('y', yScale(0))
+        .attr('width', glyphWidth)
+        .attr('height', 0)
+        .style('fill', d => orgScale(d.orgId))
+      .merge(allGlyphs)
+        .attr('data-org', d => d.orgId)
+      .transition()
+        .attr('x', 0)
+        .attr('y', d => yScale(d.stackD[0]))
+        .attr('width', glyphWidth)
+        .attr('height', d => yScale(d.stackD[1] - d.stackD[0]))
+        .style('fill', d => orgScale(d.orgId));
   }
 };

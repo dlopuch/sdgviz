@@ -20,6 +20,7 @@ module.exports = Reflux.createStore({
 
   onSelectXFAllAmount() {
     this._processXf(
+      'allAmount',
       // extractKV(xf):
       dataXF => [{ key: 'all', value: dataXF.g.allAmount.value() }]
     );
@@ -27,6 +28,7 @@ module.exports = Reflux.createStore({
 
   onSelectXFByOrg() {
     this._processXf(
+      'amountByOrg',
       // extractKV(xf):
       dataXF => dataXF.g.orgsByAmount.all().sort()
     );
@@ -34,15 +36,17 @@ module.exports = Reflux.createStore({
 
   onSelectXFBySdg() {
     this._processXf(
+      'amountBySdg',
       // extractKV(xf):
       dataXF => dataXF.g.sdgsByAmount.all().sort(r => d3.ascending(r.key))
     );
   },
 
-  _processXf(extractKV) {
+  _processXf(drilldownName, extractKV) {
     promiseData
       .error(e => console.error(`Error accessing data, data load error: ${e}`))
       .then(dataXF => {
+        this.state.drilldownName = drilldownName;
         this.state.allAmount = dataXF.g.allAmount.value();
         this.state.drilldownKV = extractKV(dataXF); // list of {key: <category ID>, value: <number>}
 

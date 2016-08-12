@@ -19,8 +19,10 @@ window.onload = function onload() {
   });
 
   let chartBaseView = new ChartBaseView('#sdgv-svg');
-  chartBaseView.renderScales();
   window.chartBaseView = chartBaseView;
 
   reactApp();
+
+  // Start it
+  actions.selectDrilldown.allAmount();
 };
