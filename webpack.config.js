@@ -4,7 +4,7 @@ const APP_ROOT = __dirname + '/public/js';
 module.exports = {
   context: APP_ROOT,
   entry: {
-    app: './entry.js'
+    app: './entry.js',
   },
   output: {
     path: './public/dist/',
@@ -18,8 +18,8 @@ module.exports = {
       }
     ],
     loaders: [
-      { test: /\.js$/  , loader: 'babel', exclude: /node_modules/, query: {presets: ['es2015']}},
-      { test: /\.jsx$/ , loader: 'jsx-loader?harmony', exclude: /node_modules/},
+      { test: /\.jsx?$/, loader: 'babel', exclude: /node_modules/, query: {presets: ['es2015']}},
+      { test: /\.jsx?$/, loader: 'jsx-loader?harmony', exclude: /node_modules/},
       { test: /\.less$/, loader: "style!css!less" },
 
       // Needed to load graphics in less, eg Bootstrap

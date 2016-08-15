@@ -1,3 +1,9 @@
+public/dist/
+
+
+# github defaults:
+# ---------------
+
 # Logs
 logs
 *.log
