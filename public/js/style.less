@@ -1,0 +1,58 @@
+
+.sdgviz-table {
+
+  border-collapse: collapse;
+
+  tr > td {
+    padding: 3px;
+  }
+
+  .top-record {
+    cursor: pointer;
+  }
+
+  .drilldown-record {
+    .tree-marker, .tree-contents {
+      display: inline-block;
+    }
+
+    .tree-marker {
+      padding-left: 0px;
+      padding-right: 10px;
+      color: grey;
+    }
+  }
+
+  &.by-sdg {
+    .drilldown-record .tree-marker {
+      padding-left: 10px;  // extra padding on by-sdg to line up with sdg box
+    }
+  }
+
+  .top-record > .value,
+  .drilldown-summary-record > .value,
+  .all-summary > .value {
+    padding-left: 20px; // to provide some spacing differentiating drilldown sums
+  }
+
+  .drilldown-summary-record, .all-summary {
+    > .key {
+      text-align: right;
+    }
+    > .key, > .value {
+      font-weight: bold;
+    }
+
+    > td {
+      padding-bottom: 10px;
+    }
+  }
+
+  tr.hovered {
+    background-color: #F0F0F0;
+  }
+
+  tr.all-summary > td {
+    border-top: 1px solid black;
+  }
+}

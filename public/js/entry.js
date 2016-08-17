@@ -6,6 +6,8 @@ window.d3 = require('d3');
 // Webpack/npm issue?
 // require('d3-selection-multi');
 
+require('./style.less');
+
 const promiseData = require('./promiseData');
 const ChartBaseView = require('./charts/ChartBaseView');
 const actions = require('./actions');

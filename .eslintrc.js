@@ -22,6 +22,7 @@ module.exports = {
     "newline-per-chained-call": 0, // not appropriate for D3
     "key-spacing": 0, // I like making columns
     "space-before-function-paren": 0, // don't like that style
-    "no-param-reassign": ["error", {"props": false} ] // let forEach's mutate objects
+    "no-param-reassign": ["error", {"props": false} ], // let forEach's mutate objects
+    "no-return-assign": 0, // allow re-use of arrow functions
   }
 };
