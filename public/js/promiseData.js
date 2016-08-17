@@ -7,6 +7,8 @@ const Promise = require('bluebird');
 const tabletop = require('tabletop');
 const crossfilter = require('crossfilter');
 
+const computeViews = require('./stores/computeViews');
+
 // const DOCS_URL = 'https://docs.google.com/spreadsheets/d/1h3RPu4a-wfeQi7ROcrWGwu_m-T4VB7_RHZQJjDfeIJ8/pub?gid=0&single=true&output=csv';
 const DOCS_KEY = '1h3RPu4a-wfeQi7ROcrWGwu_m-T4VB7_RHZQJjDfeIJ8';
 
@@ -90,4 +92,10 @@ module.exports = promiseFetchData()
     d: dimensions,
     g: groups,
   };
+})
+
+.then(function doComputeViews(data) {
+  data.views = computeViews(data);
+
+  return data;
 });
