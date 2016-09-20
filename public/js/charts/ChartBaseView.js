@@ -2,6 +2,9 @@ const _ = require('lodash');
 const d3 = require('d3');
 
 const CrossfilterDataStore = require('../stores/CrossfilterDataStore');
+const ThermometerOutline = require('./ThermometerOutline');
+
+const GLYPH_WIDTH = 21;
 
 /**
  * Creates a D3-like scale constructor that when set with a domain of ordinals (intended:
@@ -51,12 +54,15 @@ module.exports = class ChartBaseView {
 
     let opts = this.opts = _.defaults(_opts, {
       margin: {
-        left: 80,
+        left: 25,
         right: 10,
-        bottom: 20,
-        top: 10,
+        bottom: 50,
+        top: 22,
       },
     });
+
+    let defs = svg.append('defs');
+    ThermometerOutline.addGradientDef(defs);
 
     // margin convention: http://bl.ocks.org/mbostock/3019563
     svg = svg.append('g')
@@ -91,6 +97,7 @@ module.exports = class ChartBaseView {
       .ticks(5, '3s');
 
     this._svg = {
+      thermometer: svg.append('g'),
       xAxis: svg.append('g')
         .classed('x axis', true)
         .attr('transform', `translate(0, ${opts.chartArea.height})`),
@@ -99,8 +106,15 @@ module.exports = class ChartBaseView {
 
       chartArea: svg.append('g')
         .classed('chart-canvas', true)
-        .attr('transform', `translate(1, ${opts.chartArea.height}) scale(1, -1)`),
+        .attr('transform', `translate(0, ${opts.chartArea.height}) scale(1, -1)`),
     };
+
+    this._components.thermometerOutline = new ThermometerOutline(
+      this._svg.thermometer,
+      0, 0, // startX, startY
+      GLYPH_WIDTH, this.opts.chartArea.height, // thermW, thermH
+      GLYPH_WIDTH - 1
+    );
   }
 
   onNewCrossfilterData(xfData) {
@@ -155,13 +169,11 @@ module.exports = class ChartBaseView {
 
     let yScale = this._components.canvasYScale;
 
-    let glyphWidth = 20;
-
     allGlyphs.exit()
       .transition()
         .attr('x', 0)
         .attr('y', yScale(0))
-        .attr('width', glyphWidth)
+        .attr('width', GLYPH_WIDTH)
         .attr('height', 0)
         .remove();
 
@@ -171,16 +183,18 @@ module.exports = class ChartBaseView {
         .classed('glyph', true)
         .attr('x', 0)
         .attr('y', yScale(0))
-        .attr('width', glyphWidth)
+        .attr('width', GLYPH_WIDTH)
         .attr('height', 0)
         .style('fill', '#000')
       .merge(allGlyphs)
       .transition()
         .attr('x', 0)
         .attr('y', yScale(0))
-        .attr('width', glyphWidth)
+        .attr('width', GLYPH_WIDTH)
         .attr('height', yScale)
         .style('fill', '#000');
+
+    this._components.thermometerOutline.changeBulbColor('#000');
   }
 
   renderBySdg(xfData) {
@@ -227,13 +241,13 @@ module.exports = class ChartBaseView {
 
     let yScale = this._components.canvasYScale;
 
-    let glyphWidth = 20;
+    let colorFromDatum = d => (d.xfData.meta ? d.xfData.meta.color : '#000');
 
     allGlyphs.exit()
       .transition()
         .attr('x', 0)
         .attr('y', yScale(0))
-        .attr('width', glyphWidth)
+        .attr('width', GLYPH_WIDTH)
         .attr('height', 0)
         .remove();
 
@@ -243,16 +257,19 @@ module.exports = class ChartBaseView {
         .classed('glyph', true)
         .attr('x', 0)
         .attr('y', yScale(0))
-        .attr('width', glyphWidth)
+        .attr('width', GLYPH_WIDTH)
         .attr('height', 0)
-        .style('fill', d => (d.xfData.meta ? d.xfData.meta.color : '#000'))
+        .style('fill', colorFromDatum)
       .merge(allGlyphs)
       .transition()
         .attr('x', 0)
         .attr('y', d => yScale(d.stackD[0]))
-        .attr('width', glyphWidth)
+        .attr('width', GLYPH_WIDTH)
         .attr('height', d => yScale(d.stackD[1] - d.stackD[0]))
-        .style('fill', d => (d.xfData.meta ? d.xfData.meta.color : '#000'));
+        .style('fill', colorFromDatum);
+
+    let lastDatum = data[data.length - 1];
+    this._components.thermometerOutline.changeBulbColor(colorFromDatum(lastDatum));
   }
 
   renderByOrgs(xfData) {
@@ -298,15 +315,16 @@ module.exports = class ChartBaseView {
 
     let yScale = this._components.canvasYScale;
 
-    let glyphWidth = 20;
     let orgScale = scaleOrgColor();
     orgScale.domain(data.map(d => d.orgId).reverse());
+
+    let colorFromDatum = d => orgScale(d.orgId);
 
     allGlyphs.exit()
       .transition()
         .attr('x', 0)
         .attr('y', yScale(0))
-        .attr('width', glyphWidth)
+        .attr('width', GLYPH_WIDTH)
         .attr('height', 0)
         .remove();
 
@@ -316,15 +334,18 @@ module.exports = class ChartBaseView {
         .classed('glyph', true)
         .attr('x', 0)
         .attr('y', yScale(0))
-        .attr('width', glyphWidth)
+        .attr('width', GLYPH_WIDTH)
         .attr('height', 0)
-        .style('fill', d => orgScale(d.orgId))
+        .style('fill', colorFromDatum)
       .merge(allGlyphs)
       .transition()
         .attr('x', 0)
         .attr('y', d => yScale(d.stackD[0]))
-        .attr('width', glyphWidth)
+        .attr('width', GLYPH_WIDTH)
         .attr('height', d => yScale(d.stackD[1] - d.stackD[0]))
-        .style('fill', d => orgScale(d.orgId));
+        .style('fill', colorFromDatum);
+
+    let lastDatum = data[data.length - 1];
+    this._components.thermometerOutline.changeBulbColor(colorFromDatum(lastDatum));
   }
 };
