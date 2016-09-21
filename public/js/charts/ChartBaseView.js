@@ -213,6 +213,7 @@ module.exports = class ChartBaseView {
         .attr('height', 0)
         .style('fill', 'FireBrick')
       .merge(allGlyphs)
+        .on('mouseover', null) // clear any mouseover's
       .transition()
         .attr('x', 0)
         .attr('y', yScale(0))
@@ -222,6 +223,7 @@ module.exports = class ChartBaseView {
 
     this._components.thermometerOutline.changeBulbColor('FireBrick');
     this._components.amountIndicator
+      .setColor()
       .show()
       .slideToPos(allAmount)
       .setText(Formatters.tick(allAmount));
@@ -291,6 +293,13 @@ module.exports = class ChartBaseView {
         .attr('height', 0)
         .style('fill', colorFromDatum)
       .merge(allGlyphs)
+        // Note: any previous mouseovers are overridden
+        .on('mouseover', d => {
+          this._components.amountIndicator
+            .setColor(colorFromDatum(d))
+            .slideToPos((d.stackD[0] + d.stackD[1]) / 2)
+            .setText(Formatters.tick(d.xfData.value));
+        })
       .transition()
         .attr('x', 0)
         .attr('y', d => yScale(d.stackD[0]))
@@ -302,6 +311,7 @@ module.exports = class ChartBaseView {
     this._components.thermometerOutline.changeBulbColor(colorFromDatum(lastDatum));
     this._components.amountIndicator
       .show()
+      .setColor()
       .slideToPos(xfData.allAmount)
       .setText(Formatters.tick(xfData.allAmount));
   }
@@ -311,6 +321,7 @@ module.exports = class ChartBaseView {
     let sdgsByOrg = xfData.drilldownKV; // list of {key: <sdgId>, value: <number>}
 
     let keys = sdgsByOrg.map(r => r.key);
+    let drilldownByKey = _.keyBy(sdgsByOrg, r => r.key);
 
     let stacker = d3.stack()
       .keys(keys)
@@ -329,7 +340,7 @@ module.exports = class ChartBaseView {
 
     // Now we have a list of series: [ [<sdg-A data 1>, ...], [<sdg-B data 1>, ... ], ...]
     // Need to flatten it because only doing one datum for each serie.
-    let data = series.map(s => ({ orgId: s.key, stackD: s[0] }));
+    let data = series.map(s => ({ orgId: s.key, stackD: s[0], xfData: drilldownByKey[s.key] }));
 
     // d3 stack generator makes the top element the last element in the list.  That screws up
     // the transitions a bit because the data bind joins on index order, so if we data join
@@ -372,6 +383,13 @@ module.exports = class ChartBaseView {
         .attr('height', 0)
         .style('fill', colorFromDatum)
       .merge(allGlyphs)
+        // Note: any previous mouseovers are overridden
+        .on('mouseover', d => {
+          this._components.amountIndicator
+            .setColor(colorFromDatum(d))
+            .slideToPos((d.stackD[0] + d.stackD[1]) / 2)
+            .setText(Formatters.tick(d.xfData.value));
+        })
       .transition()
         .attr('x', 0)
         .attr('y', d => yScale(d.stackD[0]))
@@ -383,6 +401,7 @@ module.exports = class ChartBaseView {
     this._components.thermometerOutline.changeBulbColor(colorFromDatum(lastDatum));
     this._components.amountIndicator
       .show()
+      .setColor()
       .slideToPos(xfData.allAmount)
       .setText(Formatters.tick(xfData.allAmount));
   }
