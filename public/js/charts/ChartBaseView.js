@@ -238,7 +238,7 @@ module.exports = class ChartBaseView {
 
   renderBySdg(xfData) {
     let allAmount = xfData.allAmount;
-    let sdgsByAmount = xfData.drilldownKV; // list of {key: <sdgId>, value: <number>}
+    let sdgsByAmount = _.clone(xfData.drilldownKV).reverse(); // list of {key: <sdgId>, value: <number>}
 
     let keys = sdgsByAmount.map(r => r.key);
     let drilldownByKey = _.keyBy(sdgsByAmount, r => r.key);
@@ -331,7 +331,7 @@ module.exports = class ChartBaseView {
 
     let stacker = d3.stack()
       .keys(keys)
-      .order(d3.stackOrderDescending)
+      .order(d3.stackOrderAscending)
       .offset(d3.stackOffsetNone);
 
     // Transform data into a list of x-entries as expected by d3 stack generator
