@@ -21,50 +21,53 @@ module.exports = class ThermometerOutline {
     let gradDef = svgDefsSelection.append('linearGradient')
       .attr('id', 'thermOutlineGrad')
       .attr('x1', '100%')
-      .attr('y1', '0%')
+      .attr('y1', '7%')
       .attr('x2', '100%')
-      .attr('y2', '80%')
+      .attr('y2', '100%')
       .attr('gradientUnits', 'objectBoundingBox');
 
     gradDef.append('stop')
       .attr('offset', '0%')
-      .attr('style', 'stop-color: rgb(182, 211, 245); stop-opacity: 1'); // d3 doesn't recognize svg styles for .style()
+      .attr('style', 'stop-color: rgb(182, 211, 245); stop-opacity: 1'); // d3 doesn't recognize svg styles in .style()
 
     gradDef.append('stop')
       .attr('offset', '100%')
-      .attr('style', 'stop-color: rgb(70, 130, 180); stop-opacity: 1'); // d3 doesn't recognize svg styles for .style()
+      .attr('style', 'stop-color: rgb(70, 130, 180); stop-opacity: 1'); // d3 doesn't recognize svg styles in .style()
   }
 
-  constructor(gSelection, startX, startY, thermW, thermH, bulbR) {
+  constructor(gSelection, params) {
     gSelection
       .classed('thermometer', true);
 
-    let bulbCy = startY + thermH + bulbR - bulbR / 4;
+    let p = params;
+
+    let bulbCy = p.startY + p.thermH + p.bulbR - p.bulbR / 4;
 
     this._components = {
       outline: gSelection.append('path')
-        .attr('d', drawOutline(startX, startY, thermW, 10, bulbCy, bulbR))
+        .attr('d', drawOutline(p.startX, p.startY, p.thermW, p.outlineW, bulbCy, p.bulbR))
         .attr('stroke', 'none')
         .attr('fill', 'url(#thermOutlineGrad)'),
 
       thermBody: gSelection.append('rect')
         .classed('therm-body', true)
-        .attr('x', startX)
-        .attr('y', startY)
-        .attr('width', thermW)
+        .attr('x', p.startX)
+        .attr('y', p.startY)
+        .attr('width', p.thermW)
         .attr('height', bulbCy),
 
       thermTop: gSelection.append('circle')
         .classed('therm-body', true)
-        .attr('cx', startX + Math.ceil(thermW / 2))
-        .attr('cy', startY)
-        .attr('r', Math.floor(thermW / 2)),
+        .attr('cx', p.startX + p.thermW / 2)
+        .attr('cy', p.startY)
+        .attr('r', p.thermW / 2),
 
       bulb: gSelection.append('circle')
         .classed('therm-bulb', true)
-        .attr('cx', startX + Math.ceil(thermW / 2))
+        .attr('cx', p.startX + Math.ceil(p.thermW / 2))
         .attr('cy', bulbCy)
-        .attr('r', bulbR),
+        .attr('r', p.bulbR)
+        .attr('fill', p.initialColor),
     };
   }
 

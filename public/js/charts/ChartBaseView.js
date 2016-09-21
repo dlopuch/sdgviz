@@ -3,8 +3,10 @@ const d3 = require('d3');
 
 const CrossfilterDataStore = require('../stores/CrossfilterDataStore');
 const ThermometerOutline = require('./ThermometerOutline');
+const Formatters = require('../Formatters');
 
 const GLYPH_WIDTH = 21;
+const THERM_OUTLINE_WIDTH = 10;
 
 /**
  * Creates a D3-like scale constructor that when set with a domain of ordinals (intended:
@@ -91,10 +93,11 @@ module.exports = class ChartBaseView {
       .tickSize(3)
       .tickPadding(6);
 
-    this._components.yAxis = d3.axisLeft(this._components.axisYScale)
-      .tickSize(3)
+    this._components.yAxis = d3.axisRight(this._components.axisYScale)
+      .tickSize(10)
       .tickPadding(6)
-      .ticks(5, '3s');
+      .ticks(5)
+      .tickFormat(Formatters.tick);
 
     this._svg = {
       thermometer: svg.append('g'),
@@ -102,7 +105,9 @@ module.exports = class ChartBaseView {
         .classed('x axis', true)
         .attr('transform', `translate(0, ${opts.chartArea.height})`),
 
-      yAxis: svg.append('g').classed('y axis', true),
+      yAxis: svg.append('g')
+        .classed('y axis', true)
+        .attr('transform', `translate(${GLYPH_WIDTH + THERM_OUTLINE_WIDTH * 1.5}, 0)`),
 
       chartArea: svg.append('g')
         .classed('chart-canvas', true)
@@ -111,9 +116,18 @@ module.exports = class ChartBaseView {
 
     this._components.thermometerOutline = new ThermometerOutline(
       this._svg.thermometer,
-      0, 0, // startX, startY
-      GLYPH_WIDTH, this.opts.chartArea.height, // thermW, thermH
-      GLYPH_WIDTH - 1
+      {
+        startX: 0,
+        startY: 0,
+
+        thermW: GLYPH_WIDTH,
+        thermH: this.opts.chartArea.height,
+
+        outlineW: THERM_OUTLINE_WIDTH,
+        bulbR: GLYPH_WIDTH - 1,
+
+        initialColor: 'FireBrick',
+      }
     );
   }
 
@@ -185,16 +199,16 @@ module.exports = class ChartBaseView {
         .attr('y', yScale(0))
         .attr('width', GLYPH_WIDTH)
         .attr('height', 0)
-        .style('fill', '#000')
+        .style('fill', 'FireBrick')
       .merge(allGlyphs)
       .transition()
         .attr('x', 0)
         .attr('y', yScale(0))
         .attr('width', GLYPH_WIDTH)
         .attr('height', yScale)
-        .style('fill', '#000');
+        .style('fill', 'FireBrick');
 
-    this._components.thermometerOutline.changeBulbColor('#000');
+    this._components.thermometerOutline.changeBulbColor('FireBrick');
   }
 
   renderBySdg(xfData) {
