@@ -2,8 +2,10 @@ const _ = require('lodash');
 const d3 = require('d3');
 
 const CrossfilterDataStore = require('../stores/CrossfilterDataStore');
-const ThermometerOutline = require('./ThermometerOutline');
 const Formatters = require('../Formatters');
+
+const ThermometerOutline = require('./ThermometerOutline');
+const AmountIndicator = require('./AmountIndicator');
 
 const GLYPH_WIDTH = 21;
 const THERM_OUTLINE_WIDTH = 10;
@@ -101,6 +103,7 @@ module.exports = class ChartBaseView {
 
     this._svg = {
       thermometer: svg.append('g'),
+
       xAxis: svg.append('g')
         .classed('x axis', true)
         .attr('transform', `translate(0, ${opts.chartArea.height})`),
@@ -108,6 +111,9 @@ module.exports = class ChartBaseView {
       yAxis: svg.append('g')
         .classed('y axis', true)
         .attr('transform', `translate(${GLYPH_WIDTH + THERM_OUTLINE_WIDTH * 1.5}, 0)`),
+
+      amountIndicator: svg.append('g')
+        .attr('transform', `translate(${GLYPH_WIDTH + THERM_OUTLINE_WIDTH * 1.7}, 0)`),
 
       chartArea: svg.append('g')
         .classed('chart-canvas', true)
@@ -129,6 +135,12 @@ module.exports = class ChartBaseView {
         initialColor: 'FireBrick',
       }
     );
+
+    this._components.amountIndicator = new AmountIndicator(
+      this._svg.amountIndicator,
+      this._components.axisYScale
+    )
+      .setPos(0);
   }
 
   onNewCrossfilterData(xfData) {
@@ -209,6 +221,10 @@ module.exports = class ChartBaseView {
         .style('fill', 'FireBrick');
 
     this._components.thermometerOutline.changeBulbColor('FireBrick');
+    this._components.amountIndicator
+      .show()
+      .slideToPos(allAmount)
+      .setText(Formatters.tick(allAmount));
   }
 
   renderBySdg(xfData) {
@@ -284,6 +300,10 @@ module.exports = class ChartBaseView {
 
     let lastDatum = data[data.length - 1];
     this._components.thermometerOutline.changeBulbColor(colorFromDatum(lastDatum));
+    this._components.amountIndicator
+      .show()
+      .slideToPos(xfData.allAmount)
+      .setText(Formatters.tick(xfData.allAmount));
   }
 
   renderByOrgs(xfData) {
@@ -361,5 +381,9 @@ module.exports = class ChartBaseView {
 
     let lastDatum = data[data.length - 1];
     this._components.thermometerOutline.changeBulbColor(colorFromDatum(lastDatum));
+    this._components.amountIndicator
+      .show()
+      .slideToPos(xfData.allAmount)
+      .setText(Formatters.tick(xfData.allAmount));
   }
 };

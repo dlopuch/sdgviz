@@ -1,5 +1,3 @@
-// const d3 = require('d3');
-
 function drawOutline(
   startX, startY,
   thermWidth,
