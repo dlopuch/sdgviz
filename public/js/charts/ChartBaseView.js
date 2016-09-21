@@ -1,7 +1,16 @@
 const _ = require('lodash');
 const d3 = require('d3');
 
+const actions = require('../actions');
 const CrossfilterDataStore = require('../stores/CrossfilterDataStore');
+const InteractionDataStore = require('../stores/InteractionStore');
+const Formatters = require('../Formatters');
+
+const ThermometerOutline = require('./ThermometerOutline');
+const AmountIndicator = require('./AmountIndicator');
+
+const GLYPH_WIDTH = 21;
+const THERM_OUTLINE_WIDTH = 10;
 
 /**
  * Creates a D3-like scale constructor that when set with a domain of ordinals (intended:
@@ -39,6 +48,7 @@ module.exports = class ChartBaseView {
     // flux bindings:
     // ----------------
     CrossfilterDataStore.listen(this.onNewCrossfilterData.bind(this));
+    InteractionDataStore.listen(this.onNewInteractionData.bind(this));
 
 
     // d3 setup:
@@ -51,12 +61,15 @@ module.exports = class ChartBaseView {
 
     let opts = this.opts = _.defaults(_opts, {
       margin: {
-        left: 80,
+        left: 25,
         right: 10,
-        bottom: 20,
-        top: 10,
+        bottom: 50,
+        top: 22,
       },
     });
+
+    let defs = svg.append('defs');
+    ThermometerOutline.addGradientDef(defs);
 
     // margin convention: http://bl.ocks.org/mbostock/3019563
     svg = svg.append('g')
@@ -85,22 +98,52 @@ module.exports = class ChartBaseView {
       .tickSize(3)
       .tickPadding(6);
 
-    this._components.yAxis = d3.axisLeft(this._components.axisYScale)
-      .tickSize(3)
+    this._components.yAxis = d3.axisRight(this._components.axisYScale)
+      .tickSize(10)
       .tickPadding(6)
-      .ticks(5, '3s');
+      .ticks(5)
+      .tickFormat(Formatters.tick);
 
     this._svg = {
+      thermometer: svg.append('g'),
+
       xAxis: svg.append('g')
         .classed('x axis', true)
         .attr('transform', `translate(0, ${opts.chartArea.height})`),
 
-      yAxis: svg.append('g').classed('y axis', true),
+      yAxis: svg.append('g')
+        .classed('y axis', true)
+        .attr('transform', `translate(${GLYPH_WIDTH + THERM_OUTLINE_WIDTH * 1.5}, 0)`),
+
+      amountIndicator: svg.append('g')
+        .attr('transform', `translate(${GLYPH_WIDTH + THERM_OUTLINE_WIDTH * 1.7}, 0)`),
 
       chartArea: svg.append('g')
         .classed('chart-canvas', true)
-        .attr('transform', `translate(1, ${opts.chartArea.height}) scale(1, -1)`),
+        .attr('transform', `translate(0, ${opts.chartArea.height}) scale(1, -1)`),
     };
+
+    this._components.thermometerOutline = new ThermometerOutline(
+      this._svg.thermometer,
+      {
+        startX: 0,
+        startY: 0,
+
+        thermW: GLYPH_WIDTH,
+        thermH: this.opts.chartArea.height,
+
+        outlineW: THERM_OUTLINE_WIDTH,
+        bulbR: GLYPH_WIDTH - 1,
+
+        initialColor: 'FireBrick',
+      }
+    );
+
+    this._components.amountIndicator = new AmountIndicator(
+      this._svg.amountIndicator,
+      this._components.axisYScale
+    )
+      .setPos(0);
   }
 
   onNewCrossfilterData(xfData) {
@@ -155,13 +198,14 @@ module.exports = class ChartBaseView {
 
     let yScale = this._components.canvasYScale;
 
-    let glyphWidth = 20;
+    this.initIndicator(null, null, allAmount);
+    this._svg.chartArea.classed('clickable', false);
 
     allGlyphs.exit()
       .transition()
         .attr('x', 0)
         .attr('y', yScale(0))
-        .attr('width', glyphWidth)
+        .attr('width', GLYPH_WIDTH)
         .attr('height', 0)
         .remove();
 
@@ -171,16 +215,25 @@ module.exports = class ChartBaseView {
         .classed('glyph', true)
         .attr('x', 0)
         .attr('y', yScale(0))
-        .attr('width', glyphWidth)
+        .attr('width', GLYPH_WIDTH)
         .attr('height', 0)
-        .style('fill', '#000')
+        .style('fill', 'FireBrick')
       .merge(allGlyphs)
+        .on('mouseover', null) // clear any mouseover's
+        .on('click', null) // clear any clicks
       .transition()
         .attr('x', 0)
         .attr('y', yScale(0))
-        .attr('width', glyphWidth)
+        .attr('width', GLYPH_WIDTH)
         .attr('height', yScale)
-        .style('fill', '#000');
+        .style('fill', 'FireBrick');
+
+    this._components.thermometerOutline.changeBulbColor('FireBrick');
+    this._components.amountIndicator
+      .setColor()
+      .show()
+      .slideToPos(allAmount)
+      .setText(Formatters.tick(allAmount));
   }
 
   renderBySdg(xfData) {
@@ -227,13 +280,16 @@ module.exports = class ChartBaseView {
 
     let yScale = this._components.canvasYScale;
 
-    let glyphWidth = 20;
+    let colorFromDatum = d => (d.xfData.meta ? d.xfData.meta.color : '#000');
+
+    this.initIndicator(data, colorFromDatum, xfData.allAmount);
+    this._svg.chartArea.classed('clickable', true);
 
     allGlyphs.exit()
       .transition()
         .attr('x', 0)
         .attr('y', yScale(0))
-        .attr('width', glyphWidth)
+        .attr('width', GLYPH_WIDTH)
         .attr('height', 0)
         .remove();
 
@@ -243,16 +299,27 @@ module.exports = class ChartBaseView {
         .classed('glyph', true)
         .attr('x', 0)
         .attr('y', yScale(0))
-        .attr('width', glyphWidth)
+        .attr('width', GLYPH_WIDTH)
         .attr('height', 0)
-        .style('fill', d => (d.xfData.meta ? d.xfData.meta.color : '#000'))
+        .style('fill', colorFromDatum)
       .merge(allGlyphs)
+        // Note: any previous mouseovers are overridden
+        .on('mouseover', this.onHoverDatum.bind(this))
+        .on('click', d => actions.interactions.clickDrilldown(d.xfData.key))
       .transition()
         .attr('x', 0)
         .attr('y', d => yScale(d.stackD[0]))
-        .attr('width', glyphWidth)
+        .attr('width', GLYPH_WIDTH)
         .attr('height', d => yScale(d.stackD[1] - d.stackD[0]))
-        .style('fill', d => (d.xfData.meta ? d.xfData.meta.color : '#000'));
+        .style('fill', colorFromDatum);
+
+    let lastDatum = data[data.length - 1];
+    this._components.thermometerOutline.changeBulbColor(colorFromDatum(lastDatum));
+    this._components.amountIndicator
+      .show()
+      .setColor()
+      .slideToPos(xfData.allAmount)
+      .setText(Formatters.tick(xfData.allAmount));
   }
 
   renderByOrgs(xfData) {
@@ -260,6 +327,7 @@ module.exports = class ChartBaseView {
     let sdgsByOrg = xfData.drilldownKV; // list of {key: <sdgId>, value: <number>}
 
     let keys = sdgsByOrg.map(r => r.key);
+    let drilldownByKey = _.keyBy(sdgsByOrg, r => r.key);
 
     let stacker = d3.stack()
       .keys(keys)
@@ -278,7 +346,7 @@ module.exports = class ChartBaseView {
 
     // Now we have a list of series: [ [<sdg-A data 1>, ...], [<sdg-B data 1>, ... ], ...]
     // Need to flatten it because only doing one datum for each serie.
-    let data = series.map(s => ({ orgId: s.key, stackD: s[0] }));
+    let data = series.map(s => ({ orgId: s.key, stackD: s[0], xfData: drilldownByKey[s.key] }));
 
     // d3 stack generator makes the top element the last element in the list.  That screws up
     // the transitions a bit because the data bind joins on index order, so if we data join
@@ -298,15 +366,19 @@ module.exports = class ChartBaseView {
 
     let yScale = this._components.canvasYScale;
 
-    let glyphWidth = 20;
     let orgScale = scaleOrgColor();
     orgScale.domain(data.map(d => d.orgId).reverse());
+
+    let colorFromDatum = d => orgScale(d.orgId);
+
+    this.initIndicator(data, colorFromDatum, xfData.allAmount);
+    this._svg.chartArea.classed('clickable', true);
 
     allGlyphs.exit()
       .transition()
         .attr('x', 0)
         .attr('y', yScale(0))
-        .attr('width', glyphWidth)
+        .attr('width', GLYPH_WIDTH)
         .attr('height', 0)
         .remove();
 
@@ -316,15 +388,63 @@ module.exports = class ChartBaseView {
         .classed('glyph', true)
         .attr('x', 0)
         .attr('y', yScale(0))
-        .attr('width', glyphWidth)
+        .attr('width', GLYPH_WIDTH)
         .attr('height', 0)
-        .style('fill', d => orgScale(d.orgId))
+        .style('fill', colorFromDatum)
       .merge(allGlyphs)
+        // Note: any previous mouseovers are overridden
+        .on('mouseover', this.onHoverDatum.bind(this))
+        .on('click', d => actions.interactions.clickDrilldown(d.xfData.key))
       .transition()
         .attr('x', 0)
         .attr('y', d => yScale(d.stackD[0]))
-        .attr('width', glyphWidth)
+        .attr('width', GLYPH_WIDTH)
         .attr('height', d => yScale(d.stackD[1] - d.stackD[0]))
-        .style('fill', d => orgScale(d.orgId));
+        .style('fill', colorFromDatum);
+
+    let lastDatum = data[data.length - 1];
+    this._components.thermometerOutline.changeBulbColor(colorFromDatum(lastDatum));
+    this._components.amountIndicator
+      .show()
+      .setColor()
+      .slideToPos(xfData.allAmount)
+      .setText(Formatters.tick(xfData.allAmount));
+  }
+
+  onNewInteractionData(data) {
+    if (this._currentData && data.currentHoverKey) {
+      let datum = _.find(this._currentData, ['xfData.key', data.currentHoverKey]);
+      this.moveIndicatorByDatum(datum); // if no datum, moves to default position (eg hoverout)
+    } else {
+      this.moveIndicatorByDatum();
+    }
+  }
+
+  /**
+   * Configured indicator component against current data
+   * @param {array(object)} data Current dataset being displayed
+   * @param {function} datum2ColorFn How color is derived from a datum
+   */
+  initIndicator(data, datum2ColorFn, defaultValue) {
+    this._currentData = data;
+    this._datum2ColorFn = datum2ColorFn;
+    this._indicatorDefaultValue = defaultValue;
+  }
+  moveIndicatorByDatum(d) {
+    if (d === null || d === undefined) {
+      this._components.amountIndicator
+        .setColor() // default color
+        .slideToPos(this._indicatorDefaultValue)
+        .setText(Formatters.tick(this._indicatorDefaultValue));
+    } else {
+      this._components.amountIndicator
+        .setColor(this._datum2ColorFn(d))
+        .slideToPos((d.stackD[0] + d.stackD[1]) / 2)
+        .setText(Formatters.tick(d.xfData.value));
+    }
+  }
+  onHoverDatum(d) {
+    actions.interactions.hoverDrilldown(d.xfData.key);
+    this.moveIndicatorByDatum(d);
   }
 };

@@ -9,7 +9,6 @@ window.d3 = require('d3');
 require('./style.less');
 
 const promiseData = require('./promiseData');
-const ChartBaseView = require('./charts/ChartBaseView');
 const actions = require('./actions');
 
 window.actions = actions;
@@ -19,9 +18,6 @@ window.onload = function onload() {
     console.log('GOT DATA!', data);
     window.hdData = data;
   });
-
-  let chartBaseView = new ChartBaseView('#sdgv-svg');
-  window.chartBaseView = chartBaseView;
 
   reactApp();
 

@@ -1,7 +1,59 @@
+.sdgviz-select-drilldown {
+  margin-bottom: 2em;
+
+  button {
+    cursor: pointer;
+  }
+}
+.sdgv-svg-container {
+  float: left;
+}
+.sdgv-svg {
+  .thermometer {
+    .therm-body {
+      fill: white;
+    }
+  }
+
+  .therm-amt-indicator {
+    path {
+      fill: SteelBlue;
+    }
+    text {
+      font-family: sans-serif;
+      font-size: 10px;
+      color: white;
+      fill: white;
+    }
+  }
+
+  .axis.y > {
+    path.domain {
+      display: none;
+    }
+    .tick {
+      line {
+        stroke: SteelBlue;
+      }
+      text {
+        fill: SteelBlue;
+      }
+    }
+  }
+
+  .chart-canvas.clickable .glyph {
+    cursor: pointer;
+  }
+}
 
 .sdgviz-table {
+  width: 450px;
 
   border-collapse: collapse;
+
+  thead {
+    font-weight: bold;
+  }
 
   tr > td {
     padding: 3px;

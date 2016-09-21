@@ -1,12 +1,15 @@
 const React = require('react');
 const Reflux = require('reflux');
 
+const actions = require('../actions');
 const CrossfilterDataStore = require('../stores/CrossfilterDataStore');
+const InteractionStore = require('../stores/InteractionStore');
 const F = require('../Formatters');
 
 module.exports = React.createClass({
   mixins: [
-    Reflux.listenTo(CrossfilterDataStore, '_onXfData')
+    Reflux.listenTo(CrossfilterDataStore, '_onXfData'),
+    Reflux.listenTo(InteractionStore, '_onInteractionData'),
   ],
 
   getInitialState() {
@@ -25,12 +28,27 @@ module.exports = React.createClass({
     });
   },
 
+  _onInteractionData(data) {
+    this.setState({
+      hoverSelectKey: data.currentHoverKey,
+    });
+
+    if (data.clickedDrilldown) {
+      let which = data.clickedDrilldown.key;
+      this.state.activeDrilldowns[which] =
+        data.clickedDrilldown.expand !== null ? data.clickedDrilldown.expand : !this.state.activeDrilldowns[which];
+      this.forceUpdate();
+    }
+  },
+
   expandDrilldown(kvRecord) {
+    // TODO: Migrate this to trigger the action and read from InteractionStore.clickedDrilldown
     this.state.activeDrilldowns[kvRecord.key] = true;
     this.forceUpdate();
   },
 
   hideDrilldown(kvRecord) {
+    // TODO: Migrate this to trigger the action and read from InteractionStore.clickedDrilldown
     this.state.activeDrilldowns[kvRecord.key] = false;
     this.forceUpdate();
   },
@@ -48,8 +66,8 @@ module.exports = React.createClass({
 
     this.state.xfData.drilldownKV.forEach(kv => {
       let onHoverRow = () => {
-        this.setState({ hoverSelectKey: kv.key });
-      }
+        actions.interactions.hoverDrilldown(kv.key);
+      };
 
       if (!this.state.activeDrilldowns[kv.key]) {
         rows.push(
@@ -111,7 +129,9 @@ module.exports = React.createClass({
     })
 
     return (
-      <tbody onMouseOut={this.setState.bind(this, { hoverSelectKey: null }, null)}>
+      <tbody
+        onMouseOut={() => actions.interactions.hoverDrilldown(null)}
+      >
         {rows}
       </tbody>
     );
