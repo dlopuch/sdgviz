@@ -1,7 +1,9 @@
 const _ = require('lodash');
 const d3 = require('d3');
 
+const actions = require('../actions');
 const CrossfilterDataStore = require('../stores/CrossfilterDataStore');
+const InteractionDataStore = require('../stores/InteractionStore');
 const Formatters = require('../Formatters');
 
 const ThermometerOutline = require('./ThermometerOutline');
@@ -46,6 +48,7 @@ module.exports = class ChartBaseView {
     // flux bindings:
     // ----------------
     CrossfilterDataStore.listen(this.onNewCrossfilterData.bind(this));
+    InteractionDataStore.listen(this.onNewInteractionData.bind(this));
 
 
     // d3 setup:
@@ -195,6 +198,9 @@ module.exports = class ChartBaseView {
 
     let yScale = this._components.canvasYScale;
 
+    this.initIndicator(null, null, allAmount);
+    this._svg.chartArea.classed('clickable', false);
+
     allGlyphs.exit()
       .transition()
         .attr('x', 0)
@@ -214,6 +220,7 @@ module.exports = class ChartBaseView {
         .style('fill', 'FireBrick')
       .merge(allGlyphs)
         .on('mouseover', null) // clear any mouseover's
+        .on('click', null) // clear any clicks
       .transition()
         .attr('x', 0)
         .attr('y', yScale(0))
@@ -275,6 +282,9 @@ module.exports = class ChartBaseView {
 
     let colorFromDatum = d => (d.xfData.meta ? d.xfData.meta.color : '#000');
 
+    this.initIndicator(data, colorFromDatum, xfData.allAmount);
+    this._svg.chartArea.classed('clickable', true);
+
     allGlyphs.exit()
       .transition()
         .attr('x', 0)
@@ -294,12 +304,8 @@ module.exports = class ChartBaseView {
         .style('fill', colorFromDatum)
       .merge(allGlyphs)
         // Note: any previous mouseovers are overridden
-        .on('mouseover', d => {
-          this._components.amountIndicator
-            .setColor(colorFromDatum(d))
-            .slideToPos((d.stackD[0] + d.stackD[1]) / 2)
-            .setText(Formatters.tick(d.xfData.value));
-        })
+        .on('mouseover', this.onHoverDatum.bind(this))
+        .on('click', d => actions.interactions.clickDrilldown(d.xfData.key))
       .transition()
         .attr('x', 0)
         .attr('y', d => yScale(d.stackD[0]))
@@ -365,6 +371,9 @@ module.exports = class ChartBaseView {
 
     let colorFromDatum = d => orgScale(d.orgId);
 
+    this.initIndicator(data, colorFromDatum, xfData.allAmount);
+    this._svg.chartArea.classed('clickable', true);
+
     allGlyphs.exit()
       .transition()
         .attr('x', 0)
@@ -384,12 +393,8 @@ module.exports = class ChartBaseView {
         .style('fill', colorFromDatum)
       .merge(allGlyphs)
         // Note: any previous mouseovers are overridden
-        .on('mouseover', d => {
-          this._components.amountIndicator
-            .setColor(colorFromDatum(d))
-            .slideToPos((d.stackD[0] + d.stackD[1]) / 2)
-            .setText(Formatters.tick(d.xfData.value));
-        })
+        .on('mouseover', this.onHoverDatum.bind(this))
+        .on('click', d => actions.interactions.clickDrilldown(d.xfData.key))
       .transition()
         .attr('x', 0)
         .attr('y', d => yScale(d.stackD[0]))
@@ -404,5 +409,42 @@ module.exports = class ChartBaseView {
       .setColor()
       .slideToPos(xfData.allAmount)
       .setText(Formatters.tick(xfData.allAmount));
+  }
+
+  onNewInteractionData(data) {
+    if (this._currentData && data.currentHoverKey) {
+      let datum = _.find(this._currentData, ['xfData.key', data.currentHoverKey]);
+      this.moveIndicatorByDatum(datum); // if no datum, moves to default position (eg hoverout)
+    } else {
+      this.moveIndicatorByDatum();
+    }
+  }
+
+  /**
+   * Configured indicator component against current data
+   * @param {array(object)} data Current dataset being displayed
+   * @param {function} datum2ColorFn How color is derived from a datum
+   */
+  initIndicator(data, datum2ColorFn, defaultValue) {
+    this._currentData = data;
+    this._datum2ColorFn = datum2ColorFn;
+    this._indicatorDefaultValue = defaultValue;
+  }
+  moveIndicatorByDatum(d) {
+    if (d === null || d === undefined) {
+      this._components.amountIndicator
+        .setColor() // default color
+        .slideToPos(this._indicatorDefaultValue)
+        .setText(Formatters.tick(this._indicatorDefaultValue));
+    } else {
+      this._components.amountIndicator
+        .setColor(this._datum2ColorFn(d))
+        .slideToPos((d.stackD[0] + d.stackD[1]) / 2)
+        .setText(Formatters.tick(d.xfData.value));
+    }
+  }
+  onHoverDatum(d) {
+    actions.interactions.hoverDrilldown(d.xfData.key);
+    this.moveIndicatorByDatum(d);
   }
 };
