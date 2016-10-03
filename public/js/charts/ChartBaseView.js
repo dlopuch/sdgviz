@@ -43,6 +43,23 @@ const scaleOrgColor = function() {
 };
 window.scaleOrgColor = scaleOrgColor;
 
+function addGlossGradientDef(svgDefsSelection) {
+  svgDefsSelection.append('linearGradient')
+    .attr('id', 'thermGloss')
+    .attr('spreadMethod', 'pad')
+    .attr('x1', '0%')
+    .attr('y1', '0%')
+    .attr('x2', '100%')
+    .attr('y2', '0%')
+    .html(`
+      <stop offset="0%"   style="stop-color:rgba(255, 255, 255, 0);stop-opacity:0;" />
+      <stop offset="28%"  style="stop-color:rgba(255, 255, 255, 0.76);stop-opacity:0.76;" />
+      <stop offset="48%"  style="stop-color:rgba(134, 134, 134, 0.4);stop-opacity:0.4;" />
+      <stop offset="75%"  style="stop-color:rgba(0, 0, 0, 0.3);stop-opacity:0.3;" />
+      <stop offset="100%" style="stop-color:rgba(255, 255, 255, 0);stop-opacity:0;" />
+    `);
+}
+
 module.exports = class ChartBaseView {
   constructor(svgSelector = 'svg', _opts = {}) {
     // flux bindings:
@@ -70,6 +87,7 @@ module.exports = class ChartBaseView {
 
     let defs = svg.append('defs');
     ThermometerOutline.addGradientDef(defs);
+    addGlossGradientDef(defs);
 
     // margin convention: http://bl.ocks.org/mbostock/3019563
     svg = svg.append('g')
@@ -121,10 +139,25 @@ module.exports = class ChartBaseView {
       chartArea: svg.append('g')
         .classed('chart-canvas', true)
         .attr('transform', `translate(0, ${opts.chartArea.height}) scale(1, -1)`),
+
+      chartAreaDecoration: svg.append('g')
+        .classed('chart-canvas-decoration', true)
+        .attr('transform', `translate(0, ${opts.chartArea.height}) scale(1, -1)`),
     };
+
+    // Note: we want ThermometerOutline's bulb to be stacked above this element, so since both are going inside
+    // this._svg.chartAreaDecoration, this must be BEFORE ThermometerOutline instantiated.
+    this._svg.chartAreaGloss = this._svg.chartAreaDecoration.append('rect')
+      .attr('fill', 'url(#thermGloss)') // id of addGlossGradientDef()
+      .classed('therm-gloss', true)
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('width', GLYPH_WIDTH)
+      .attr('height', 0);
 
     this._components.thermometerOutline = new ThermometerOutline(
       this._svg.thermometer,
+      this._svg.chartAreaDecoration,
       {
         startX: 0,
         startY: 0,
@@ -185,6 +218,11 @@ module.exports = class ChartBaseView {
       .call(this._components.yAxis);
   }
 
+  scaleGloss(newHeightPx) {
+    this._svg.chartAreaGloss.transition()
+      .attr('height', newHeightPx);
+  }
+
   renderAllAmount(xfData) {
     let allAmount = xfData.allAmount;
     let allGlyphs = this._svg.chartArea.selectAll('rect.glyph')
@@ -197,6 +235,8 @@ module.exports = class ChartBaseView {
     this.renderScales();
 
     let yScale = this._components.canvasYScale;
+
+    this.scaleGloss(yScale(allAmount));
 
     this.initIndicator(null, null, allAmount);
     this._svg.chartArea.classed('clickable', false);
@@ -279,6 +319,8 @@ module.exports = class ChartBaseView {
     this.renderScales();
 
     let yScale = this._components.canvasYScale;
+
+    this.scaleGloss(yScale(allAmount));
 
     let colorFromDatum = d => (d.xfData.meta ? d.xfData.meta.color : '#000');
 
@@ -365,6 +407,8 @@ module.exports = class ChartBaseView {
     this.renderScales();
 
     let yScale = this._components.canvasYScale;
+
+    this.scaleGloss(yScale(allAmount));
 
     let orgScale = scaleOrgColor();
     orgScale.domain(data.map(d => d.orgId).reverse());
