@@ -3,12 +3,13 @@ function drawOutline(
   thermWidth,
   width,
   bulbCy,
-  bulbR
+  bulbR,
+  bulbFudge = 0
 ) {
   return `
     M ${startX - width} ${startY}
-    L ${startX - width} ${bulbCy - bulbR}
-    A ${bulbR + width} ${bulbR + width} 0 1 0 ${startX + thermWidth + width} ${bulbCy - bulbR}
+    L ${startX - width} ${bulbCy - bulbR + bulbFudge}
+    A ${bulbR + width} ${bulbR + width} 0 1 0 ${startX + thermWidth + width} ${bulbCy - bulbR + bulbFudge}
     L ${startX + thermWidth + width} ${startX}
     A ${thermWidth / 2 + width} ${thermWidth / 2 + width} 0 1 0 ${startX - width} ${startY} 
     `;
@@ -61,7 +62,7 @@ module.exports = class ThermometerOutline {
         .attr('fill', 'url(#thermOutlineGrad)'),
 
       inline: gSelection.append('path')
-      .attr('d', drawOutline(p.startX, p.startY, p.thermW, p.outlineW / 2, bulbCy, p.bulbR))
+      .attr('d', drawOutline(p.startX, p.startY, p.thermW, p.outlineW / 2.5, bulbCy, p.bulbR, 3))
       .attr('stroke', 'none')
       .attr('fill', 'white'),
 
