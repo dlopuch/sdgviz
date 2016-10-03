@@ -142,8 +142,8 @@ module.exports = React.createClass({
 
     if (xfData.drilldownName === 'allAmount') {
       return (<div>
-        Total pledged: {F.pledge(xfData.allAmount)}.<br/>
-        That's {F.percent(xfData.allAmount / xfData.goal)} achieved!
+        Total pledged across all SDG's: <strong>{F.pledge(xfData.allAmount)}</strong><br/>
+        That's <strong>{F.percent(xfData.allAmount / xfData.goal)}</strong> of the Half Billion Challenge!
       </div>);
 
     } else if (xfData.drilldownName === 'amountByOrg') {
@@ -187,21 +187,31 @@ module.exports = React.createClass({
   },
 
   renderSdgFullName(small, sdgKvRecord) {
+    let SIZE_PX = small ? 40 : 50;
     return (
       <div>
-        <div style={{
-          display: 'inline-block',
-          width: 20,
-          height: 20,
-          margin: small ? 2 : 5,
-          padding: small ? 2 : 5,
-          borderRadius: 5,
-          backgroundColor: sdgKvRecord.meta.color,
-          textAlign: 'center',
-          color: 'white',
-          fontWeight: 'bold',
-        }}>
-          {sdgKvRecord.key}
+        <div
+          style={{
+            display: 'inline-block',
+            width: SIZE_PX,
+            height: SIZE_PX,
+            margin: small ? 2 : 5,
+            padding: 0,
+            borderRadius: 5,
+
+            background: `url(${sdgKvRecord.meta.iconUri}) no-repeat`,
+            backgroundColor: sdgKvRecord.meta.color,
+            backgroundSize: `${SIZE_PX}px ${SIZE_PX}px`,
+
+
+            textAlign: 'center',
+            color: 'white',
+            fontWeight: 'bold',
+            float: 'left',
+          }}
+          title={`SDG ${sdgKvRecord.key}: ${sdgKvRecord.meta.name}`}
+        >
+          &nbsp;&nbsp;
         </div>
         {sdgKvRecord.meta.name}
       </div>
@@ -210,7 +220,7 @@ module.exports = React.createClass({
 
   render: function() {
     if (!this.state.xfData) {
-      return (<div className="sdgviz-drilldown">Loading, please wait...</div>);
+      return (<div className="sdgviz-drilldown">Loading pledge data, please wait...</div>);
     }
 
     return (

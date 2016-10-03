@@ -21,6 +21,27 @@ const SDG_DEFS = {
   17: { color: '#13496B', name: 'Partnership for the Goals' },
 };
 
+const SDG_ICONS_BY_SDG = {
+  1 : 'http://gscouncil.org/main/wp-content/uploads/2015/11/E_SDG_Icons-01-117x117.jpg',
+  2 : 'http://gscouncil.org/main/wp-content/uploads/2015/11/E_SDG_Icons-02-117x117.jpg',
+  3 : 'http://gscouncil.org/main/wp-content/uploads/2015/11/E_SDG_Icons-03-150x150.jpg',
+  4 : 'http://gscouncil.org/main/wp-content/uploads/2015/11/E_SDG_Icons-04-150x150.jpg',
+  5 : 'http://gscouncil.org/main/wp-content/uploads/2015/11/E_SDG_Icons-05-150x150.jpg',
+  6 : 'http://gscouncil.org/main/wp-content/uploads/2015/11/E_SDG_Icons-06-150x150.jpg',
+  7 : 'http://gscouncil.org/main/wp-content/uploads/2015/11/E_SDG_Icons-07-150x150.jpg',
+  8 : 'http://gscouncil.org/main/wp-content/uploads/2015/11/E_SDG_Icons-08-150x150.jpg',
+  9 : 'http://gscouncil.org/main/wp-content/uploads/2015/11/E_SDG_Icons-09-150x150.jpg',
+  10: 'http://gscouncil.org/main/wp-content/uploads/2015/11/E_SDG_Icons-10-150x150.jpg',
+  11: 'http://gscouncil.org/main/wp-content/uploads/2015/11/E_SDG_Icons-11-150x150.jpg',
+  12: 'http://gscouncil.org/main/wp-content/uploads/2015/11/E_SDG_Icons-12-150x150.jpg',
+  13: 'http://gscouncil.org/main/wp-content/uploads/2015/11/E_SDG_Icons-13-150x150.jpg',
+  14: 'http://gscouncil.org/main/wp-content/uploads/2015/11/E_SDG_Icons-14-150x150.jpg',
+  15: 'http://gscouncil.org/main/wp-content/uploads/2015/11/E_SDG_Icons-15-150x150.jpg',
+  16: 'http://gscouncil.org/main/wp-content/uploads/2015/11/E_SDG_Icons-16-150x150.jpg',
+  17: 'http://gscouncil.org/main/wp-content/uploads/2015/11/E_SDG_Icons-17-150x150.jpg',
+};
+_.toPairs(SDG_DEFS).forEach(kv => kv[1].iconUri = SDG_ICONS_BY_SDG[kv[0]]);
+
 /**
  * Creates a D3-like scale constructor that when set with a domain of ordinals (intended:
  * organization names), the scale returns a color using the d3.interpolateCool() scale.
