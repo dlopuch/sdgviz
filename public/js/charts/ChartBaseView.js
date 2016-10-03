@@ -54,8 +54,8 @@ function addGlossGradientDef(svgDefsSelection) {
     .html(`
       <stop offset="0%"   style="stop-color:rgba(255, 255, 255, 0);stop-opacity:0;" />
       <stop offset="28%"  style="stop-color:rgba(255, 255, 255, 0.76);stop-opacity:0.76;" />
-      <stop offset="48%"  style="stop-color:rgba(134, 134, 134, 0.4);stop-opacity:0.4;" />
-      <stop offset="75%"  style="stop-color:rgba(0, 0, 0, 0.3);stop-opacity:0.3;" />
+      <stop offset="48%"  style="stop-color:rgba(220, 220, 220, 0.4);stop-opacity:0.4;" />
+      <stop offset="75%"  style="stop-color:rgba(100, 100, 100, 0.2);stop-opacity:0.2;" />
       <stop offset="100%" style="stop-color:rgba(255, 255, 255, 0);stop-opacity:0;" />
     `);
 }
