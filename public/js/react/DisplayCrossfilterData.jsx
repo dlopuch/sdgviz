@@ -171,7 +171,7 @@ module.exports = React.createClass({
           <thead>
           <tr>
             <td>SDG</td>
-            <td>Amount Pledged</td>
+            <td colSpan="2">Amount Pledged</td>
           </tr>
           </thead>
           { this.renderTableBodyWithDrilldowns(sdgKv => this.renderSdgFullName(false, sdgKv)) }

@@ -20,6 +20,6 @@ module.exports = function reactApp() {
       <ChartContainer></ChartContainer>
       <DisplayCrossfilterData></DisplayCrossfilterData>
     </div>,
-    document.getElementById('react-app')
+    document.getElementById('sdgviz-react-app')
   );
 }
