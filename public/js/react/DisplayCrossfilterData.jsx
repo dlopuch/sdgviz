@@ -159,7 +159,7 @@ module.exports = React.createClass({
           <tfoot>
             <tr className="all-summary">
               <td className="key">All Pledges:</td>
-              <td className="value">{F.pledge(this.state.xfData.allAmount)}</td>
+              <td className="value" colspan="2">{F.pledge(this.state.xfData.allAmount)}</td>
             </tr>
           </tfoot>
         </table>
@@ -178,7 +178,7 @@ module.exports = React.createClass({
           <tfoot>
           <tr className="all-summary">
             <td className="key">All Pledges:</td>
-            <td className="value">{F.pledge(this.state.xfData.allAmount)}</td>
+            <td className="value" colspan="2">{F.pledge(this.state.xfData.allAmount)}</td>
             </tr>
           </tfoot>
         </table>

@@ -59,6 +59,24 @@
     font-weight: bold;
   }
 
+  tbody {
+    > tr > td {
+      // Get rid of borders to expand/unexpand cells
+      &:nth-child(2) { border-right: none; }
+      &:nth-child(3) { border-left: none; }
+    }
+
+    tr {
+      &.drilldown-record td, &.dilldown-summary-record td {
+        border-top: none;
+        border-bottom: none;
+      }
+      &.top-record.expanded {
+        border-bottom: none;
+      }
+    }
+  }
+
   @bgColor: #FFF;
   @tableColor: #666;
 
@@ -69,11 +87,6 @@
       // override wp theme alternate-row coloring
       color: @tableColor;
       background-color: @bgColor;
-    }
-
-    &.drilldown-record td, &.dilldown-summary-record td {
-      border-top-color: @bgColor;
-      border-bottom-color: @bgColor;
     }
   }
 
@@ -123,16 +136,10 @@
   }
 
   tr.hovered {
-    @hoverColor: #F0F0F0;
-    background-color: @hoverColor;
-
-    &.drilldown-record td, &.dilldown-summary-record td {
-      border-top-color: @hoverColor;
-      border-bottom-color: @hoverColor;
-    }
+    background-color: #F0F0F0;
   }
 
   tr.all-summary > td {
-    border-top: 1px solid black;
+    border-top: 1px solid #666666;
   }
 }
