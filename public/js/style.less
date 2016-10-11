@@ -1,3 +1,7 @@
+// Colors also defined in Formatters.js
+@gscBlue: #01589b;
+@gscLightBlue: #9dbed8;
+
 .sdgviz-select-drilldown {
   margin-bottom: 2em;
 
@@ -17,7 +21,7 @@
 
   .therm-amt-indicator {
     path {
-      fill: SteelBlue;
+      fill: @gscBlue;
     }
     text {
       font-family: sans-serif;
@@ -33,10 +37,10 @@
     }
     .tick {
       line {
-        stroke: SteelBlue;
+        stroke: @gscBlue;
       }
       text {
-        fill: SteelBlue;
+        fill: @gscBlue;
       }
     }
   }
@@ -53,6 +57,24 @@
 
   thead {
     font-weight: bold;
+  }
+
+  @bgColor: #FFF;
+  @tableColor: #666;
+
+  tr {
+    color: @tableColor;
+    background-color: @bgColor;
+    &:nth-child(even) {
+      // override wp theme alternate-row coloring
+      color: @tableColor;
+      background-color: @bgColor;
+    }
+
+    &.drilldown-record td, &.dilldown-summary-record td {
+      border-top-color: @bgColor;
+      border-bottom-color: @bgColor;
+    }
   }
 
   tr > td {
@@ -101,7 +123,13 @@
   }
 
   tr.hovered {
-    background-color: #F0F0F0;
+    @hoverColor: #F0F0F0;
+    background-color: @hoverColor;
+
+    &.drilldown-record td, &.dilldown-summary-record td {
+      border-top-color: @hoverColor;
+      border-bottom-color: @hoverColor;
+    }
   }
 
   tr.all-summary > td {

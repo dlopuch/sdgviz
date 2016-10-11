@@ -1,3 +1,5 @@
+const F = require('../Formatters');
+
 function drawOutline(
   startX, startY,
   thermWidth,
@@ -27,11 +29,11 @@ module.exports = class ThermometerOutline {
 
     gradDef.append('stop')
       .attr('offset', '0%')
-      .attr('style', 'stop-color: rgb(182, 211, 245); stop-opacity: 1'); // d3 doesn't recognize svg styles in .style()
+      .attr('style', `stop-color: ${F.colors.gscLightBlue}; stop-opacity: 1`); // d3 doesn't recognize svg styles in .style()
 
     gradDef.append('stop')
       .attr('offset', '100%')
-      .attr('style', 'stop-color: rgb(70, 130, 180); stop-opacity: 1'); // d3 doesn't recognize svg styles in .style()
+      .attr('style', `stop-color: ${F.colors.gscBlue}; stop-opacity: 1`); // d3 doesn't recognize svg styles in .style()
 
 
     svgDefsSelection.append('linearGradient')

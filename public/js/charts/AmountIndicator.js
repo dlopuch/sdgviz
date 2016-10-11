@@ -1,4 +1,5 @@
 const _ = require('lodash');
+const F = require('../Formatters');
 
 const svgPathRoundCorners = require('./utils/svgPathRoundCorners');
 
@@ -10,7 +11,7 @@ module.exports = class AmountIndicator {
       height: 20,
       pointWidth: 10,
       bodyWidth: 40,
-      color: 'steelblue',
+      color: F.colors.gscBlue,
     });
 
     this.yScale = axisYScale;
