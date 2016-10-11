@@ -11,7 +11,8 @@ module.exports = React.createClass({
   },
 
   componentDidMount() {
-    window.chartBaseView = new ChartBaseView(ReactDOM.findDOMNode(this.refs.sdgvSvg))
+    this.chartBaseView = new ChartBaseView(ReactDOM.findDOMNode(this.refs.sdgvSvg));
+    // window.chartBaseView = this.chartBaseView;
   },
 
   render() {

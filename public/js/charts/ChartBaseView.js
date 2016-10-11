@@ -41,7 +41,6 @@ const scaleOrgColor = function() {
 
   return orgScale;
 };
-window.scaleOrgColor = scaleOrgColor;
 
 function addGlossGradientDef(svgDefsSelection) {
   svgDefsSelection.append('linearGradient')
