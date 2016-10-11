@@ -59,7 +59,8 @@
     font-weight: bold;
   }
 
-  thead > tr, tfoot > tr {
+  thead > tr, tfoot > tr,
+  thead > tr:nth-child(odd), tfoot > tr:nth-child(odd) { // override shitty wp theme
     background-color: @gscBlue;
     color: white;
   }
